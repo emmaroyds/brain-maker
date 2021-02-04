@@ -93,7 +93,6 @@
 </body>
 <script>
 	const colors = ["salmon", "chartreuse", "burlywood", "cornflowerblue", "darkmagenta"]
-	var nonRepeatingColors = []
 
 	var prelevel1 = {visualfield:[[]], layers:["one"], neurons:[[1]], nextLevel:"prelevel2"}
 	var prelevel2 = {visualfield:[[]], layers:["one","two"], neurons:[[1],[2]], nextLevel:"prelevel3"}
@@ -102,10 +101,6 @@
 
 	function pickfrom(list) {
 		var x = Math.floor(Math.random() * list.length)
-		console.log("picked " + list[x])
-		var pickedColor = list[x]
-		list.splice(x, 1)
-		console.log(list)
 		return list[x]
 	}
 
@@ -116,7 +111,7 @@
 	}
 
 	function populate(layerId, neurons) {
-		var color = pickfrom(nonRepeatingColors)
+		var color = pickfrom(colors)
 		var area = document.createElement("div")
 		area.setAttribute("id", layerId)
 		area.classList.add("layer")
@@ -135,7 +130,6 @@
 	function generate(level) {
 		const oldElements = document.getElementsByClassName("layer")
 		while (oldElements.length > 0) oldElements[0].remove()
-		nonRepeatingColors = colors
 		for (i = 0; i < level.layers.length; i++) {
 			populate(level.layers[i],level.neurons[i])
 		}
