@@ -1,1 +1,204 @@
+<style>
+	body {
+		margin: 0;
+	}
 
+	td {
+		background: black;
+		border: 1px solid white;
+		padding: 40px;
+	}
+
+	td.firing {
+		background: white;
+		border: 1px solid black;
+	}
+
+	table {
+		border-collapse: collapse;
+		margin: 10vh auto;
+	}
+
+	div {
+		display: flex;
+    	justify-content: center;
+	}
+
+	.salmon {
+		border-color: salmon;
+	}
+
+	.chartreuse {
+		border-color: chartreuse;
+	}
+
+	.burlywood {
+		border-color: burlywood;
+	}
+
+	.cornflowerblue {
+		border-color: cornflowerblue;
+	}
+
+	.darkmagenta {
+		border-color: darkmagenta;
+	}
+
+	.salmon.firing {
+		background: salmon;
+		color: white;
+	}
+
+	.chartreuse.firing {
+		background: chartreuse;
+		color: white;
+	}
+
+	.burlywood.firing {
+		background: burlywood;
+		color: white;
+	}
+
+	.cornflowerblue.firing {
+		background: cornflowerblue;
+		color: white;
+	}
+
+	.darkmagenta.firing {
+		background: darkmagenta;
+		color: white;
+	}
+
+	button {
+		background: white;
+		color: black;
+		border-radius: 50%;
+		border-style: solid;
+		height: 50px;
+		width: 50px;
+		margin: 2px;
+	}
+
+	div {
+		margin: 16px 0;
+	}
+</style>
+<body>
+	<table></table>
+	<div>
+		<svg id="nextLevelButton" onclick="nextlevel()" viewBox="0 0 459 459" height="2em">
+			<path d="M229.5,0C102.751,0,0,102.751,0,229.5S102.751,459,229.5,459S459,356.249,459,229.5S356.249,0,229.5,0z M310.292,239.651 l-111.764,76.084c-3.761,2.56-8.63,2.831-12.652,0.704c-4.022-2.128-6.538-6.305-6.538-10.855V153.416 c0-4.55,2.516-8.727,6.538-10.855c4.022-2.127,8.891-1.857,12.652,0.704l111.764,76.084c3.359,2.287,5.37,6.087,5.37,10.151 C315.662,233.564,313.652,237.364,310.292,239.651z"></path>
+		</svg>
+	</div>
+</body>
+<script>
+	const colors = ["salmon", "chartreuse", "burlywood", "cornflowerblue", "darkmagenta"]
+	var nonRepeatingColors = []
+
+	var prelevel1 = {visualfield:[[]], layers:["one"], neurons:[[1]], nextLevel:"prelevel2"}
+	var prelevel2 = {visualfield:[[]], layers:["one","two"], neurons:[[1],[2]], nextLevel:"prelevel3"}
+	var prelevel3 = {visualfield:[[]], layers:["one","two"], neurons:[[1,2],[3]], nextLevel:"level1"}
+	var level1 = {visualfield:[[1,2,3,4,5]], layers:["retina","v1"], neurons:[[1,2,3,4,5],[6,7,8]], nextLevel:""}
+
+	function pickfrom(list) {
+		var x = Math.floor(Math.random() * list.length)
+		console.log("picked " + list[x])
+		var pickedColor = list[x]
+		list.splice(x, 1)
+		console.log(list)
+		return list[x]
+	}
+
+	Array.prototype.unique = function() {
+		return this.filter(function(value, index, self) {
+			return self.indexOf(value) === index;
+		});
+	}
+
+	function populate(layerId, neurons) {
+		var color = pickfrom(nonRepeatingColors)
+		var area = document.createElement("div")
+		area.setAttribute("id", layerId)
+		area.classList.add("layer")
+		document.body.appendChild(area)
+		for (const neuron of neurons) {
+			var button = document.createElement("button")
+			button.setAttribute("id", neuron.toString())
+			button.setAttribute("onclick", "changeState(" + neuron.toString() + ")")
+			button.classList.add(layerId)
+			button.classList.add(color)
+			// button.innerHTML = "#" + neuron.toString()
+			document.getElementById(layerId).appendChild(button)
+		}
+	}
+
+	function generate(level) {
+		const oldElements = document.getElementsByClassName("layer")
+		while (oldElements.length > 0) oldElements[0].remove()
+		nonRepeatingColors = colors
+		for (i = 0; i < level.layers.length; i++) {
+			populate(level.layers[i],level.neurons[i])
+		}
+		document.getElementById("nextLevelButton").setAttribute("onclick", "generate(" + level.nextLevel + ")")
+	}
+
+	function changeState(neuron) {
+		document.getElementById("i" + neuron.toString()).classList.toggle("firing")
+		document.getElementById(neuron.toString()).classList.toggle("firing")
+	}
+
+	function fire(neuron) {
+		var y = 0;
+		if (neuron == 0) {} else {
+			for (const input of neuron) {
+				if (document.getElementById(input.toString()).classList.contains("firing")) {
+					y++
+				}
+			}
+			if (y == neuron.length) {
+				document.getElementById(neuron.id).classList.add("firing")
+			} else {
+				document.getElementById(neuron.id).classList.remove("firing")
+			}
+		}
+	}
+
+	function pulse() {
+
+	}
+
+	function propagate(neuron) {
+		neuronsToToggle = []
+		for (const retinalNeuron of neuronsToToggle.unique()) {
+			console.log("trying to change neuron" + retinalNeuron.toString())
+			changeState(retinalNeuron)
+		}
+		for (const neuron of cortex.n) {
+			fire(neuron)
+		}
+		for (const neuron of complex.n) {
+			recognise(neuron)
+		}
+		for (const neuron of it.n) {
+			recognise(neuron)
+		}
+	}
+
+	function recognise(neuron) {
+		var y = 0;
+		for (const input of neuron) {
+			if (document.getElementById(input.toString()).classList.contains("firing")) {
+				y++
+			}
+		}
+		if (y >= 1) {
+			document.getElementById(neuron.id.toString()).classList.add("firing")
+		} else {
+			document.getElementById(neuron.id.toString()).classList.remove("firing")
+		}
+	}
+
+	generate(prelevel1)
+
+	setInterval(pulse(), 2000)
+</script>
