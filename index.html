@@ -2,73 +2,58 @@
 	body {
 		margin: 0;
 	}
-
 	td {
 		background: black;
 		border: 1px solid white;
 		padding: 40px;
 	}
-
 	td.firing {
 		background: white;
 		border: 1px solid black;
 	}
-
 	table {
 		border-collapse: collapse;
 		margin: 10vh auto;
 	}
-
 	div {
 		display: flex;
 		justify-content: center;
 	}
-
 	.salmon {
 		border-color: salmon;
 	}
-
 	.chartreuse {
 		border-color: chartreuse;
 	}
-
 	.burlywood {
 		border-color: burlywood;
 	}
-
 	.cornflowerblue {
 		border-color: cornflowerblue;
 	}
-
 	.darkmagenta {
 		border-color: darkmagenta;
 	}
-
 	.salmon.firing {
 		background: salmon;
 		color: white;
 	}
-
 	.chartreuse.firing {
 		background: chartreuse;
 		color: white;
 	}
-
 	.burlywood.firing {
 		background: burlywood;
 		color: white;
 	}
-
 	.cornflowerblue.firing {
 		background: cornflowerblue;
 		color: white;
 	}
-
 	.darkmagenta.firing {
 		background: darkmagenta;
 		color: white;
 	}
-
 	.neuron {
 		background: white;
 		color: black;
@@ -76,7 +61,6 @@
 		border-style: solid;
 		margin: 1em;
 	}
-
 	.dendrite {
 		height: 50px;
 		width: 50px;
@@ -99,7 +83,7 @@
 	const prelevel3 = {name:"prelevel3", visualfield:[[]], layers:["retina","middle"], neurons:[[1,2],[3]], nextLevel:"level1"}
 	const level1 = {name:"level1", visualfield:[[1,2,3,4,5]], layers:["retina","middle"], neurons:[[1,2,3,4,5],[6,7,8]], nextLevel:""}
 
-	var currentLevel = "" //variable to keep track of current level, used for remembering built synapses
+	var currentLevel = "" //variable to keep track of current level, unused
 
 	function populate(layerId, layer) {
 		let color = ["salmon", "chartreuse", "burlywood", "cornflowerblue", "darkmagenta"][Math.floor(Math.random() * 5)]
@@ -126,6 +110,7 @@
 	} //creates HTML elements representing neurons, used by the generate function
 
 	function generate(level) {
+		localStorage.clear()
 		currentLevel = level.name
 		let elementsFromPreviousLevel = document.getElementsByClassName("layer")
 		while (elementsFromPreviousLevel.length > 0) elementsFromPreviousLevel[0].remove()
@@ -135,72 +120,34 @@
 		document.getElementById("nextLevelButton").setAttribute("onclick", "generate(" + level.nextLevel + ")")
 	} //parses level data
 
+	function fire(neuron, threshold) {
+		let excitation = 0
+		let inputs = JSON.parse(localStorage.getItem(neuron))
+		for (const input of inputs) {
+			if (document.getElementById(input + "+").classList.contains("firing")) excitation++
+		}
+		if (excitation >= threshold) document.getElementById(neuron + "+").classList.add("firing")
+		else document.getElementById(neuron + "+").classList.remove("firing")
+	}
+
 	function formSynapse(event) {
 		let presynapticID = event.dataTransfer.getData("presynapticID")
 		let postsynapticID = event.target.id
 		if (localStorage.getItem(postsynapticID) != null) {
 			let inputs = JSON.parse(localStorage.getItem(postsynapticID))
-			if (inputs.indexOf(presynapticID)==-1) inputs.push(presynapticID)
+			if (inputs.indexOf(presynapticID) == -1) inputs.push(presynapticID)
 			localStorage.setItem(postsynapticID, JSON.stringify(inputs))
 		}
-		else {
-			localStorage.setItem(postsynapticID, JSON.stringify([presynapticID]))
-		}
+		else localStorage.setItem(postsynapticID, JSON.stringify([presynapticID]))
 	}
-
-	function fire(neuron) {
-		var y = 0;
-		if (neuron == 0) {} else {
-			for (const input of neuron) {
-				if (document.getElementById(input.toString()).classList.contains("firing")) {
-					y++
-				}
-			}
-			if (y == neuron.length) {
-				document.getElementById(neuron.id).classList.add("firing")
-			} else {
-				document.getElementById(neuron.id).classList.remove("firing")
-			}
-		}
-	} //legacy code from eliasmith's network
-
-	function propagate(neuron) {
-		neuronsToToggle = []
-		for (const retinalNeuron of neuronsToToggle.unique()) {
-			console.log("trying to change neuron" + retinalNeuron.toString())
-			changeState(retinalNeuron)
-		}
-		for (const neuron of cortex.n) {
-			fire(neuron)
-		}
-		for (const neuron of complex.n) {
-			recognise(neuron)
-		}
-		for (const neuron of it.n) {
-			recognise(neuron)
-		}
-	} //legacy code from eliasmith's network
-
-	function recognise(neuron) {
-		var y = 0;
-		for (const input of neuron) {
-			if (document.getElementById(input.toString()).classList.contains("firing")) {
-				y++
-			}
-		}
-		if (y >= 1) {
-			document.getElementById(neuron.id.toString()).classList.add("firing")
-		} else {
-			document.getElementById(neuron.id.toString()).classList.remove("firing")
-		}
-	} //legacy code from eliasmith's network
 
 	var oscillator = 0 //maintains periodic spike
 
 	function spike() {
 		oscillator += 1
-		for (const x of Array.from(document.getElementsByClassName('retina'))) {
-			x.classList.add('firing')
+		for (const x of Array.from(document.getElementsByClassName('retina'))) x.classList.add('firing')
+		for (const x of Array.from(document.getElementsByClassName('middle'))) {
+			if (localStorage.getItem(x.id.slice(0,-1)) != null) fire(x.id.slice(0,-1), 2)
 		}
 		if (oscillator === 5) {
 			clearInterval(spikeInterval)
@@ -212,6 +159,9 @@
 		oscillator -= 0.25
 		for (const x of Array.from(document.getElementsByClassName('retina'))) {
 			x.classList.remove('firing')
+		}
+		for (const x of Array.from(document.getElementsByClassName('middle'))) {
+			if (localStorage.getItem(x.id.slice(0,-1)) != null) fire(x.id.slice(0,-1), 2)
 		}
 		if (oscillator === 0) {
 			clearInterval(restInterval)
