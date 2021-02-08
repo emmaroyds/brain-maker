@@ -69,7 +69,7 @@
 		color: white;
 	}
 
-	button {
+	.neuron {
 		background: white;
 		color: black;
 		border-radius: 50%;
@@ -84,7 +84,8 @@
 	}
 </style>
 <body>
-	<table></table>
+	<table>
+	</table>
 	<div>
 		<svg id="nextLevelButton" onclick="nextlevel()" viewBox="0 0 459 459" height="2em">
 			<path d="M229.5,0C102.751,0,0,102.751,0,229.5S102.751,459,229.5,459S459,356.249,459,229.5S356.249,0,229.5,0z M310.292,239.651 l-111.764,76.084c-3.761,2.56-8.63,2.831-12.652,0.704c-4.022-2.128-6.538-6.305-6.538-10.855V153.416 c0-4.55,2.516-8.727,6.538-10.855c4.022-2.127,8.891-1.857,12.652,0.704l111.764,76.084c3.359,2.287,5.37,6.087,5.37,10.151 C315.662,233.564,313.652,237.364,310.292,239.651z"></path>
@@ -92,54 +93,61 @@
 	</div>
 </body>
 <script>
-	const colors = ["salmon", "chartreuse", "burlywood", "cornflowerblue", "darkmagenta"]
+	const prelevel1 = {name:"prelevel1", visualfield:[[]], layers:["retina"], neurons:[[1]], nextLevel:"prelevel2"}
+	const prelevel2 = {name:"prelevel2", visualfield:[[]], layers:["retina","middle"], neurons:[[1],[2]], nextLevel:"prelevel3"}
+	const prelevel3 = {name:"prelevel3", visualfield:[[]], layers:["retina","middle"], neurons:[[1,2],[3]], nextLevel:"level1"}
+	const level1 = {name:"level1", visualfield:[[1,2,3,4,5]], layers:["retina","middle"], neurons:[[1,2,3,4,5],[6,7,8]], nextLevel:""}
 
-	const prelevel1 = {visualfield:[[]], layers:["retina"], neurons:[[1]], nextLevel:"prelevel2"}
-	const prelevel2 = {visualfield:[[]], layers:["retina","middle"], neurons:[[1],[2]], nextLevel:"prelevel3"}
-	const prelevel3 = {visualfield:[[]], layers:["retina","middle"], neurons:[[1,2],[3]], nextLevel:"level1"}
-	const level1 = {visualfield:[[1,2,3,4,5]], layers:["retina","middle"], neurons:[[1,2,3,4,5],[6,7,8]], nextLevel:""}
+	var currentLevel = "prelevel1" //variable to keep track of current level, used for remembering built synapses
 
-	function pickfrom(list) {
-		let x = Math.floor(Math.random() * list.length)
-		return list[x]
-	}
-
-	Array.prototype.unique = function() {
-		return this.filter(function(value, index, self) {
-			return self.indexOf(value) === index;
-		});
-	}
-
-	function populate(layerId, neurons) {
-		let color = pickfrom(colors)
-		let area = document.createElement("div")
-		area.setAttribute("id", layerId)
-		area.classList.add("layer")
-		document.body.appendChild(area)
-		for (const neuron of neurons) {
-			let button = document.createElement("button")
-			button.setAttribute("id", neuron.toString())
-			button.setAttribute("onclick", "changeState(" + neuron.toString() + ")")
-			button.classList.add(layerId)
-			button.classList.add(color)
-			// button.innerHTML = "#" + neuron.toString()
-			document.getElementById(layerId).appendChild(button)
+	function populate(layerId, layer) {
+		let color = ["salmon", "chartreuse", "burlywood", "cornflowerblue", "darkmagenta"][Math.floor(Math.random() * 5)]
+		let layerElement = document.createElement("div")
+		layerElement.setAttribute("id", layerId)
+		layerElement.classList.add("layer")
+		document.body.appendChild(layerElement)
+		for (const neuron of layer) {
+			let neuronElement = document.createElement("div")
+			neuronElement.setAttribute("id", neuron.toString())
+			neuronElement.setAttribute("ondragover","allowDrop(event)")
+			neuronElement.setAttribute("ondrop","drop(event)")
+			//neuronElement.setAttribute("onclick", "")
+			neuronElement.classList.add("neuron")
+			neuronElement.classList.add(layerId)
+			neuronElement.classList.add(color)
+			let dendrite = document.createElement("div")
+			dendrite.setAttribute("draggable","true")
+			neuronElement.appendChild(dendrite)
+			//neuronElement.innerHTML = "#" + neuron.toString()
+			document.getElementById(layerId).appendChild(neuronElement)
 		}
-	}
+	} //creates HTML elements representing neurons, used by the generate function
 
 	function generate(level) {
-		let oldElements = document.getElementsByClassName("layer")
-		while (oldElements.length > 0) oldElements[0].remove()
+		currentLevel = level.name
+		let elementsFromPreviousLevel = document.getElementsByClassName("layer")
+		while (elementsFromPreviousLevel.length > 0) elementsFromPreviousLevel[0].remove()
 		for (i = 0; i < level.layers.length; i++) {
 			populate(level.layers[i],level.neurons[i])
 		}
 		document.getElementById("nextLevelButton").setAttribute("onclick", "generate(" + level.nextLevel + ")")
-	}
+	} //parses level data
 
-	function changeState(neuron) {
-		document.getElementById("i" + neuron.toString()).classList.toggle("firing")
-		document.getElementById(neuron.toString()).classList.toggle("firing")
-	}
+	// function changeState(neuron) {
+	// 	document.getElementById("i" + neuron.toString()).classList.toggle("firing")
+	// 	document.getElementById(neuron.toString()).classList.toggle("firing")
+	// } // legacy code from eliasmith's network
+
+	function synpaseGen(presn, postsn) {
+		if (localStorage.getItem(currentLevel) != null) {
+			let currentSynapses = JSON.parse(localStorage.getItem(currentLevel))
+			let updatedSynpases = currentSynapses.push([presn, postsn])
+			localStorage.setItem(currentLevel, JSON.stringify(updatedSynpases))
+		}
+		else {
+			localStorage.setItem(currentLevel, JSON.stringify([presn,postsn]))
+		}
+	} //stores player-created synapses in browser's local storage
 
 	function fire(neuron) {
 		var y = 0;
@@ -155,7 +163,7 @@
 				document.getElementById(neuron.id).classList.remove("firing")
 			}
 		}
-	}
+	} //legacy code from eliasmith's network
 
 	function propagate(neuron) {
 		neuronsToToggle = []
@@ -172,7 +180,7 @@
 		for (const neuron of it.n) {
 			recognise(neuron)
 		}
-	}
+	} //legacy code from eliasmith's network
 
 	function recognise(neuron) {
 		var y = 0;
@@ -186,10 +194,9 @@
 		} else {
 			document.getElementById(neuron.id.toString()).classList.remove("firing")
 		}
-	}
+	} //legacy code from eliasmith's network
 
-
-	var oscillator = 0
+	var oscillator = 0 //maintains periodic spike
 
 	function spike() {
 		oscillator += 1
@@ -200,7 +207,7 @@
 			clearInterval(spikeInterval)
 			restInterval = setInterval(rest, 100)
 		}
-	}
+	} //maintains periodic spike
 
 	function rest() {
 		oscillator -= 0.25
@@ -211,13 +218,13 @@
 			clearInterval(restInterval)
 			pulse()
 		}
-	}
+	} //maintains periodic spike
 
 	function pulse() {
-		spikeInterval = setInterval(spike, 100);
-	}
+		spikeInterval = setInterval(spike, 100)
+	} //maintains periodic spike
 
-	generate(prelevel1)
+	generate(prelevel1) //starts from level 0
 
-	pulse()
+	pulse() //starts periodic spike
 </script>
