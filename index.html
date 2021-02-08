@@ -74,13 +74,14 @@
 		color: black;
 		border-radius: 50%;
 		border-style: solid;
-		height: 50px;
-		width: 50px;
-		margin: 2px;
+		margin: 1em;
 	}
 
-	div {
-		margin: 16px 0;
+	.dendrite {
+		height: 50px;
+		width: 50px;
+		border-color: #00000000;
+		border-style: solid;
 	}
 </style>
 <body>
@@ -98,27 +99,28 @@
 	const prelevel3 = {name:"prelevel3", visualfield:[[]], layers:["retina","middle"], neurons:[[1,2],[3]], nextLevel:"level1"}
 	const level1 = {name:"level1", visualfield:[[1,2,3,4,5]], layers:["retina","middle"], neurons:[[1,2,3,4,5],[6,7,8]], nextLevel:""}
 
-	var currentLevel = "prelevel1" //variable to keep track of current level, used for remembering built synapses
+	var currentLevel = "" //variable to keep track of current level, used for remembering built synapses
 
 	function populate(layerId, layer) {
 		let color = ["salmon", "chartreuse", "burlywood", "cornflowerblue", "darkmagenta"][Math.floor(Math.random() * 5)]
 		let layerElement = document.createElement("div")
-		layerElement.setAttribute("id", layerId)
+		layerElement.id = layerId
 		layerElement.classList.add("layer")
 		document.body.appendChild(layerElement)
 		for (const neuron of layer) {
 			let neuronElement = document.createElement("div")
-			neuronElement.setAttribute("id", neuron.toString())
-			neuronElement.setAttribute("ondragover","allowDrop(event)")
-			neuronElement.setAttribute("ondrop","drop(event)")
-			//neuronElement.setAttribute("onclick", "")
+			neuronElement.id = neuron.toString() + "+"
 			neuronElement.classList.add("neuron")
 			neuronElement.classList.add(layerId)
 			neuronElement.classList.add(color)
+			neuronElement.setAttribute("ondragover", "event.preventDefault()")
+			neuronElement.setAttribute("ondrop", "formSynapse(event)")
 			let dendrite = document.createElement("div")
-			dendrite.setAttribute("draggable","true")
+			dendrite.id = neuron.toString()
+			dendrite.draggable = true
+			dendrite.classList.add("dendrite")
+			dendrite.setAttribute("ondragstart", "event.dataTransfer.setData('presynapticID', event.target.id)")
 			neuronElement.appendChild(dendrite)
-			//neuronElement.innerHTML = "#" + neuron.toString()
 			document.getElementById(layerId).appendChild(neuronElement)
 		}
 	} //creates HTML elements representing neurons, used by the generate function
@@ -133,21 +135,18 @@
 		document.getElementById("nextLevelButton").setAttribute("onclick", "generate(" + level.nextLevel + ")")
 	} //parses level data
 
-	// function changeState(neuron) {
-	// 	document.getElementById("i" + neuron.toString()).classList.toggle("firing")
-	// 	document.getElementById(neuron.toString()).classList.toggle("firing")
-	// } // legacy code from eliasmith's network
-
-	function synpaseGen(presn, postsn) {
-		if (localStorage.getItem(currentLevel) != null) {
-			let currentSynapses = JSON.parse(localStorage.getItem(currentLevel))
-			let updatedSynpases = currentSynapses.push([presn, postsn])
-			localStorage.setItem(currentLevel, JSON.stringify(updatedSynpases))
+	function formSynapse(event) {
+		let presynapticID = event.dataTransfer.getData("presynapticID")
+		let postsynapticID = event.target.id
+		if (localStorage.getItem(postsynapticID) != null) {
+			let inputs = JSON.parse(localStorage.getItem(postsynapticID))
+			if (inputs.indexOf(presynapticID)==-1) inputs.push(presynapticID)
+			localStorage.setItem(postsynapticID, JSON.stringify(inputs))
 		}
 		else {
-			localStorage.setItem(currentLevel, JSON.stringify([presn,postsn]))
+			localStorage.setItem(postsynapticID, JSON.stringify([presynapticID]))
 		}
-	} //stores player-created synapses in browser's local storage
+	}
 
 	function fire(neuron) {
 		var y = 0;
