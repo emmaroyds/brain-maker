@@ -15,48 +15,49 @@
 		border-collapse: collapse;
 		margin: 10vh auto;
 	}
-	div {
+	layer, div {
 		display: flex;
 		justify-content: center;
 	}
-	.salmon {
-		color: salmon;
-		border-color: salmon;
-	}
-	.chartreuse {
-		color: chartreuse;
-		border-color: chartreuse;
-	}
-	.burlywood {
-		color: burlywood;
-		border-color: burlywood;
-	}
-	.cornflowerblue {
-		color: cornflowerblue;
-		border-color: cornflowerblue;
-	}
-	.darkmagenta {
-		color: darkmagenta;
-		border-color: darkmagenta;
-	}
-	.firing, .synapse {
-		background: currentColor;
-	}
-	.neuron {
+	neuron {
+		border-color: currentColor;
 		border-radius: 50%;
 		border-style: solid;
 		margin: 1em;
 		height: 50px;
 		width: 50px;
 	}
-	.synapse{
+	synapse{
 		position: absolute;
+		background: currentColor;
 		width: 4px;
+	}
+	.salmon {
+		color: salmon;
+	}
+	.slateblue {
+		color: slateblue;
+	}
+	.chartreuse {
+		color: chartreuse;
+	}
+	.burlywood {
+		color: burlywood;
+	}
+	.cornflowerblue {
+		color: cornflowerblue;
+	}
+	.darkmagenta {
+		color: darkmagenta;
+	}
+	.firing, .synapse {
+		background: currentColor;
 	}
 	.controls {
 		margin: 1em;
 	}
 </style>
+<title>Brain Maker</title>
 <body>
 	<table>
 	</table>
@@ -64,34 +65,36 @@
 		<svg id="resetButton" class="controls" height="2em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
 		<svg id="nextLevelButton" class="controls" height="2em" viewBox="0 0 24 24"><rect fill="none" height="24" width="24"/><path d="M15,5l-1.41,1.41L18.17,11H2V13h16.17l-4.59,4.59L15,19l7-7L15,5z"/></svg>
 	</div>
+	<div id="invisibleElement" style="display: none"></div>
 </body>
 <script>
-	const prelevel1 = {name:"prelevel1", visualfield:[[]], layers:["retina"], neurons:[[1]], nextLevel:"prelevel2"}
-	const prelevel2 = {name:"prelevel2", visualfield:[[]], layers:["retina","middle"], neurons:[[1],[2]], nextLevel:"prelevel3"}
-	const prelevel3 = {name:"prelevel3", visualfield:[[]], layers:["retina","middle"], neurons:[[1,2],[3]], nextLevel:"level1"}
+	const prelevel1 = {name:"prelevel1", visualfield:[[]], layers:["retina","middle"], neurons:[[1,2,3],[4]], nextLevel:"level1"}
 	const level1 = {name:"level1", visualfield:[[1,2,3,4,5]], layers:["retina","middle"], neurons:[[1,2,3,4,5],[6,7,8]], nextLevel:""}
 
 	var currentLevel = "" //variable to keep track of current level, unused
 
 	function populate(layerId, layer) {
-		let color = ["salmon", "chartreuse", "burlywood", "cornflowerblue", "darkmagenta"][Math.floor(Math.random() * 5)]
-		let layerElement = document.createElement("div")
+		let color = ["salmon", "chartreuse", "burlywood", "slateblue", "cornflowerblue", "darkmagenta"][Math.floor(Math.random() * 5)]
+		let layerElement = document.createElement("layer")
 		layerElement.id = layerId
-		layerElement.classList.add("layer")
 		layerElement.classList.add(color)
 		document.body.appendChild(layerElement)
 		for (const neuron of layer) {
-			let neuronElement = document.createElement("div")
+			let neuronElement = document.createElement("neuron")
 			neuronElement.id = neuron.toString()
 			neuronElement.draggable = true
-			neuronElement.classList.add("neuron")
 			neuronElement.classList.add(layerId)
-			neuronElement.setAttribute("ondragstart", "event.dataTransfer.setData('presynapticID', event.target.id)")
+			neuronElement.setAttribute("ondragstart", "event.dataTransfer.setData('presynapticID', event.target.id); hideDragImage(event)")
 			neuronElement.setAttribute("ondragover", "event.preventDefault()")
 			neuronElement.setAttribute("ondrop", "formSynapse(event)")
 			document.getElementById(layerId).appendChild(neuronElement)
 		}
 	} //creates HTML elements representing neurons, used by the generate function
+
+	function hideDragImage(e) {
+		var invisible = document.getElementById("invisibleElement")
+		e.dataTransfer.setDragImage(invisible, 0, 0)
+	}
 
 	function showSynapse(from, to, synapse){
 		var fT = from.offsetTop  + from.offsetHeight/2
@@ -144,21 +147,20 @@
 		}
 		if (excitation >= threshold) document.getElementById(neuron).classList.add("firing")
 		else document.getElementById(neuron).classList.remove("firing")
-	}
+	}//spikes neuron if inputs are firing
 
 	function formSynapse(event) {
 		let presynapticID = event.dataTransfer.getData("presynapticID")
 		let postsynapticID = event.target.id
-		if (presynapticID != postsynapticID) {
+		if (presynapticID != postsynapticID && document.getElementById(presynapticID).tagName == "NEURON" ) {
 			if (localStorage.getItem(postsynapticID) != null) {
 				let inputs = JSON.parse(localStorage.getItem(postsynapticID))
 				if (inputs.indexOf(presynapticID) == -1) inputs.push(presynapticID)
 				localStorage.setItem(postsynapticID, JSON.stringify(inputs))
 			}
 			else localStorage.setItem(postsynapticID, JSON.stringify([presynapticID]))
-			let synapseElement = document.createElement("div")
+			let synapseElement = document.createElement("synapse")
 			synapseElement.id = presynapticID + ">" + postsynapticID
-			synapseElement.classList.add("synapse")
 			document.getElementById(presynapticID).parentNode.appendChild(synapseElement)
 			showSynapse(
 				document.getElementById(presynapticID),
@@ -166,41 +168,35 @@
 				document.getElementById(synapseElement.id)
 				)
 		}
-	}
+	}//manages synapses in Local Storage and draws them
 
 	var oscillator = 0 //maintains periodic spike
 
 	function spike() {
-		oscillator += 1
+		oscillator -= 1
 		for (const x of Array.from(document.getElementsByClassName('retina'))) x.classList.add('firing')
 		for (const x of Array.from(document.getElementsByClassName('middle'))) {
-			if (localStorage.getItem(x.id) != null) fire(x.id, 2)
+			if (localStorage.getItem(x.id) != null) fire(x.id, 3)
 		}
-		if (oscillator === 5) {
+		if (oscillator <= 0) {
 			clearInterval(spikeInterval)
 			restInterval = setInterval(rest, 100)
 		}
 	} //maintains periodic spike
 
 	function rest() {
-		oscillator -= 0.25
-		for (const x of Array.from(document.getElementsByClassName('retina'))) {
-			x.classList.remove('firing')
-		}
+		oscillator += 0.15
+		for (const x of Array.from(document.getElementsByClassName('retina'))) x.classList.remove('firing')
 		for (const x of Array.from(document.getElementsByClassName('middle'))) {
-			if (localStorage.getItem(x.id) != null) fire(x.id, 2)
+			if (localStorage.getItem(x.id) != null) fire(x.id, 3)
 		}
-		if (oscillator === 0) {
+		if (oscillator >= 1) {
 			clearInterval(restInterval)
-			pulse()
+			spikeInterval = setInterval(spike, 100)
 		}
-	} //maintains periodic spike
-
-	function pulse() {
-		spikeInterval = setInterval(spike, 100)
 	} //maintains periodic spike
 
 	generate(prelevel1) //starts from level 0
 
-	pulse() //starts periodic spike
+	restInterval = setInterval(rest, 100) //starts periodic spike
 </script>
