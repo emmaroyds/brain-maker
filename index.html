@@ -20,6 +20,7 @@
 		justify-content: center;
 	}
 	neuron {
+		background: white;
 		border-color: currentColor;
 		border-radius: 50%;
 		border-style: solid;
@@ -30,7 +31,15 @@
 	synapse{
 		position: absolute;
 		background: currentColor;
+		z-index: -10;
 		width: 4px;
+	}
+	neuron[data-threshold="2"] {
+		border-style: dotted solid solid dotted;
+		transform: rotate(45deg);
+	}
+	neuron[data-threshold="3"] {
+		border-style: dotted dotted solid dotted;;
 	}
 	.salmon {
 		color: salmon;
@@ -68,22 +77,27 @@
 	<div id="invisibleElement" style="display: none"></div>
 </body>
 <script>
-	const prelevel1 = {name:"prelevel1", visualfield:[[]], layers:["retina","middle"], neurons:[[1,2,3],[4]], nextLevel:"level1"}
-	const level1 = {name:"level1", visualfield:[[1,2,3,4,5]], layers:["retina","middle"], neurons:[[1,2,3,4,5],[6,7,8]], nextLevel:""}
+	const prelevel1 = {name:"prelevel1",visualfield:[[1,2,3]],layers:["retina","middle"],neurons:[[{id:1,threshold:1},{id:2,threshold:1},{id:3,threshold:1}],[{id:4,threshold:3}]],nextLevel:"level1"}
+	const level1 = {name:"level1", visualfield:[[1,2,3,4,5]], layers:["retina","middle"], neurons:[[{id:1,threshold:1},{id:2,threshold:1},{id:3,threshold:1},{id:4,threshold:1},{id:5,threshold:1}],[{id:6,threshold:3},{id:7,threshold:3},{id:8,threshold:3}]], nextLevel:""}
 
 	var currentLevel = "" //variable to keep track of current level, unused
 
-	function populate(layerId, layer) {
+	function populate(layerId, neurons) {
 		let color = ["salmon", "chartreuse", "burlywood", "slateblue", "cornflowerblue", "darkmagenta"][Math.floor(Math.random() * 5)]
 		let layerElement = document.createElement("layer")
 		layerElement.id = layerId
 		layerElement.classList.add(color)
 		document.body.appendChild(layerElement)
-		for (const neuron of layer) {
+		for (const neuron of neurons) {
 			let neuronElement = document.createElement("neuron")
-			neuronElement.id = neuron.toString()
-			neuronElement.draggable = true
+			neuronElement.id = neuron.id
+			neuronElement.dataset.threshold = neuron.threshold
 			neuronElement.classList.add(layerId)
+			neuronElement.draggable = true
+			// switch (neuron.threshold) {
+			// 	case 2: neuronElement.style.borderStyle = "dotted solid solid dotted"; neuronElement.style.transform = "rotate(45deg)"
+			// 	case 3: neuronElement.style.borderStyle = "dotted dotted solid dotted"
+			// }
 			neuronElement.setAttribute("ondragstart", "event.dataTransfer.setData('presynapticID', event.target.id); hideDragImage(event)")
 			neuronElement.setAttribute("ondragover", "event.preventDefault()")
 			neuronElement.setAttribute("ondrop", "formSynapse(event)")
@@ -130,7 +144,7 @@
 	function generate(level) {
 		localStorage.clear()
 		currentLevel = level.name
-		let elementsFromPreviousLevel = document.getElementsByClassName("layer")
+		let elementsFromPreviousLevel = document.getElementsByTagName("layer")
 		while (elementsFromPreviousLevel.length > 0) elementsFromPreviousLevel[0].remove()
 		for (i = 0; i < level.layers.length; i++) {
 			populate(level.layers[i],level.neurons[i])
@@ -139,9 +153,10 @@
 		document.getElementById("nextLevelButton").setAttribute("onclick", "generate(" + level.nextLevel + ")")
 	} //parses level data
 
-	function fire(neuron, threshold) {
+	function fire(neuron) {
 		let excitation = 0
 		let inputs = JSON.parse(localStorage.getItem(neuron))
+		let threshold = document.getElementById(neuron).dataset.threshold
 		for (const input of inputs) {
 			if (document.getElementById(input).classList.contains("firing")) excitation++
 		}
@@ -176,7 +191,7 @@
 		oscillator -= 1
 		for (const x of Array.from(document.getElementsByClassName('retina'))) x.classList.add('firing')
 		for (const x of Array.from(document.getElementsByClassName('middle'))) {
-			if (localStorage.getItem(x.id) != null) fire(x.id, 3)
+			if (localStorage.getItem(x.id) != null) fire(x.id)
 		}
 		if (oscillator <= 0) {
 			clearInterval(spikeInterval)
@@ -188,7 +203,7 @@
 		oscillator += 0.15
 		for (const x of Array.from(document.getElementsByClassName('retina'))) x.classList.remove('firing')
 		for (const x of Array.from(document.getElementsByClassName('middle'))) {
-			if (localStorage.getItem(x.id) != null) fire(x.id, 3)
+			if (localStorage.getItem(x.id) != null) fire(x.id)
 		}
 		if (oscillator >= 1) {
 			clearInterval(restInterval)
