@@ -20,46 +20,36 @@
 		justify-content: center;
 	}
 	.salmon {
+		color: salmon;
 		border-color: salmon;
 	}
 	.chartreuse {
+		color: chartreuse;
 		border-color: chartreuse;
 	}
 	.burlywood {
+		color: burlywood;
 		border-color: burlywood;
 	}
 	.cornflowerblue {
+		color: cornflowerblue;
 		border-color: cornflowerblue;
 	}
 	.darkmagenta {
+		color: darkmagenta;
 		border-color: darkmagenta;
 	}
-	.salmon.firing {
-		background: salmon;
-		color: white;
-	}
-	.chartreuse.firing {
-		background: chartreuse;
-		color: white;
-	}
-	.burlywood.firing {
-		background: burlywood;
-		color: white;
-	}
-	.cornflowerblue.firing {
-		background: cornflowerblue;
-		color: white;
-	}
-	.darkmagenta.firing {
-		background: darkmagenta;
-		color: white;
+	.firing, .synapse {
+		background: currentColor;
 	}
 	.neuron {
-		background: white;
-		color: black;
 		border-radius: 50%;
 		border-style: solid;
 		margin: 1em;
+	}
+	.synapse{
+		position: absolute;
+    	width: 4px;
 	}
 	.dendrite {
 		height: 50px;
@@ -67,14 +57,16 @@
 		border-color: #00000000;
 		border-style: solid;
 	}
+	.controls {
+		margin: 1em;
+	}
 </style>
 <body>
 	<table>
 	</table>
-	<div>
-		<svg id="nextLevelButton" onclick="nextlevel()" viewBox="0 0 459 459" height="2em">
-			<path d="M229.5,0C102.751,0,0,102.751,0,229.5S102.751,459,229.5,459S459,356.249,459,229.5S356.249,0,229.5,0z M310.292,239.651 l-111.764,76.084c-3.761,2.56-8.63,2.831-12.652,0.704c-4.022-2.128-6.538-6.305-6.538-10.855V153.416 c0-4.55,2.516-8.727,6.538-10.855c4.022-2.127,8.891-1.857,12.652,0.704l111.764,76.084c3.359,2.287,5.37,6.087,5.37,10.151 C315.662,233.564,313.652,237.364,310.292,239.651z"></path>
-		</svg>
+	<div id="controlBox">
+		<svg id="resetButton" class="controls" height="2em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+		<svg id="nextLevelButton" class="controls" height="2em" viewBox="0 0 24 24"><rect fill="none" height="24" width="24"/><path d="M15,5l-1.41,1.41L18.17,11H2V13h16.17l-4.59,4.59L15,19l7-7L15,5z"/></svg>
 	</div>
 </body>
 <script>
@@ -90,13 +82,14 @@
 		let layerElement = document.createElement("div")
 		layerElement.id = layerId
 		layerElement.classList.add("layer")
+		layerElement.classList.add(color)
 		document.body.appendChild(layerElement)
 		for (const neuron of layer) {
 			let neuronElement = document.createElement("div")
 			neuronElement.id = neuron.toString() + "+"
 			neuronElement.classList.add("neuron")
 			neuronElement.classList.add(layerId)
-			neuronElement.classList.add(color)
+			// neuronElement.classList.add(color)
 			neuronElement.setAttribute("ondragover", "event.preventDefault()")
 			neuronElement.setAttribute("ondrop", "formSynapse(event)")
 			let dendrite = document.createElement("div")
@@ -109,6 +102,37 @@
 		}
 	} //creates HTML elements representing neurons, used by the generate function
 
+	function showSynapse(from, to, synapse){
+		var fT = from.offsetTop  + from.offsetHeight/2
+		var tT = to.offsetTop    + to.offsetHeight/2
+		var fL = from.offsetLeft + from.offsetWidth/2
+		var tL = to.offsetLeft   + to.offsetWidth/2
+
+		var CA   = Math.abs(tT - fT)
+		var CO   = Math.abs(tL - fL)
+		var H    = Math.sqrt(CA*CA + CO*CO)
+		var ANG  = 180 / Math.PI * Math.acos(CA/H)
+
+		if (tT > fT) var top  = (tT-fT) / 2 + fT
+		else var top  = (fT-tT) / 2 + tT
+
+		if (tL > fL) var left = (tL-fL) / 2 + fL
+		else var left = (fL-tL) / 2 + tL
+
+		if(( fT < tT && fL < tL) || ( tT < fT && tL < fL) || (fT > tT && fL > tL) || (tT > fT && tL > fL)) ANG *= -1
+
+		top -= H/2
+
+		synapse.style["-webkit-transform"] = 'rotate(' + ANG + 'deg)'
+		synapse.style["-moz-transform"] = 'rotate(' + ANG + 'deg)'
+		synapse.style["-ms-transform"] = 'rotate(' + ANG + 'deg)'
+		synapse.style["-o-transform"] = 'rotate(' + ANG + 'deg)'
+		synapse.style["-transform"] = 'rotate(' + ANG + 'deg)'
+		synapse.style.top    = top + 'px'
+		synapse.style.left   = left + 'px'
+		synapse.style.height = H + 'px'
+	}
+
 	function generate(level) {
 		localStorage.clear()
 		currentLevel = level.name
@@ -117,6 +141,7 @@
 		for (i = 0; i < level.layers.length; i++) {
 			populate(level.layers[i],level.neurons[i])
 		}
+		document.getElementById("resetButton").setAttribute("onclick", "generate(" + level.name + ")")
 		document.getElementById("nextLevelButton").setAttribute("onclick", "generate(" + level.nextLevel + ")")
 	} //parses level data
 
@@ -133,12 +158,23 @@
 	function formSynapse(event) {
 		let presynapticID = event.dataTransfer.getData("presynapticID")
 		let postsynapticID = event.target.id
-		if (localStorage.getItem(postsynapticID) != null) {
-			let inputs = JSON.parse(localStorage.getItem(postsynapticID))
-			if (inputs.indexOf(presynapticID) == -1) inputs.push(presynapticID)
-			localStorage.setItem(postsynapticID, JSON.stringify(inputs))
+		if (presynapticID != postsynapticID) {
+			if (localStorage.getItem(postsynapticID) != null) {
+				let inputs = JSON.parse(localStorage.getItem(postsynapticID))
+				if (inputs.indexOf(presynapticID) == -1) inputs.push(presynapticID)
+				localStorage.setItem(postsynapticID, JSON.stringify(inputs))
+			}
+			else localStorage.setItem(postsynapticID, JSON.stringify([presynapticID]))
+			let synapseElement = document.createElement("div")
+			synapseElement.id = presynapticID + ">" + postsynapticID
+			synapseElement.classList.add("synapse")
+			document.getElementById(presynapticID).parentNode.parentNode.appendChild(synapseElement)
+			showSynapse(
+				document.getElementById(presynapticID),
+				document.getElementById(postsynapticID),
+				document.getElementById(synapseElement.id)
+				)
 		}
-		else localStorage.setItem(postsynapticID, JSON.stringify([presynapticID]))
 	}
 
 	var oscillator = 0 //maintains periodic spike
