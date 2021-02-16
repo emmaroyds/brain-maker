@@ -46,16 +46,12 @@
 		border-radius: 50%;
 		border-style: solid;
 		margin: 1em;
+		height: 50px;
+		width: 50px;
 	}
 	.synapse{
 		position: absolute;
-    	width: 4px;
-	}
-	.dendrite {
-		height: 50px;
-		width: 50px;
-		border-color: #00000000;
-		border-style: solid;
+		width: 4px;
 	}
 	.controls {
 		margin: 1em;
@@ -86,18 +82,13 @@
 		document.body.appendChild(layerElement)
 		for (const neuron of layer) {
 			let neuronElement = document.createElement("div")
-			neuronElement.id = neuron.toString() + "+"
+			neuronElement.id = neuron.toString()
+			neuronElement.draggable = true
 			neuronElement.classList.add("neuron")
 			neuronElement.classList.add(layerId)
-			// neuronElement.classList.add(color)
+			neuronElement.setAttribute("ondragstart", "event.dataTransfer.setData('presynapticID', event.target.id)")
 			neuronElement.setAttribute("ondragover", "event.preventDefault()")
 			neuronElement.setAttribute("ondrop", "formSynapse(event)")
-			let dendrite = document.createElement("div")
-			dendrite.id = neuron.toString()
-			dendrite.draggable = true
-			dendrite.classList.add("dendrite")
-			dendrite.setAttribute("ondragstart", "event.dataTransfer.setData('presynapticID', event.target.id)")
-			neuronElement.appendChild(dendrite)
 			document.getElementById(layerId).appendChild(neuronElement)
 		}
 	} //creates HTML elements representing neurons, used by the generate function
@@ -149,10 +140,10 @@
 		let excitation = 0
 		let inputs = JSON.parse(localStorage.getItem(neuron))
 		for (const input of inputs) {
-			if (document.getElementById(input + "+").classList.contains("firing")) excitation++
+			if (document.getElementById(input).classList.contains("firing")) excitation++
 		}
-		if (excitation >= threshold) document.getElementById(neuron + "+").classList.add("firing")
-		else document.getElementById(neuron + "+").classList.remove("firing")
+		if (excitation >= threshold) document.getElementById(neuron).classList.add("firing")
+		else document.getElementById(neuron).classList.remove("firing")
 	}
 
 	function formSynapse(event) {
@@ -168,7 +159,7 @@
 			let synapseElement = document.createElement("div")
 			synapseElement.id = presynapticID + ">" + postsynapticID
 			synapseElement.classList.add("synapse")
-			document.getElementById(presynapticID).parentNode.parentNode.appendChild(synapseElement)
+			document.getElementById(presynapticID).parentNode.appendChild(synapseElement)
 			showSynapse(
 				document.getElementById(presynapticID),
 				document.getElementById(postsynapticID),
@@ -183,7 +174,7 @@
 		oscillator += 1
 		for (const x of Array.from(document.getElementsByClassName('retina'))) x.classList.add('firing')
 		for (const x of Array.from(document.getElementsByClassName('middle'))) {
-			if (localStorage.getItem(x.id.slice(0,-1)) != null) fire(x.id.slice(0,-1), 2)
+			if (localStorage.getItem(x.id) != null) fire(x.id, 2)
 		}
 		if (oscillator === 5) {
 			clearInterval(spikeInterval)
@@ -197,7 +188,7 @@
 			x.classList.remove('firing')
 		}
 		for (const x of Array.from(document.getElementsByClassName('middle'))) {
-			if (localStorage.getItem(x.id.slice(0,-1)) != null) fire(x.id.slice(0,-1), 2)
+			if (localStorage.getItem(x.id) != null) fire(x.id, 2)
 		}
 		if (oscillator === 0) {
 			clearInterval(restInterval)
