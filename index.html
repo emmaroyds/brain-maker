@@ -2,20 +2,38 @@
 	body {
 		margin: 0;
 	}
-	td {
+	visualField {
+		width: 100vw;
+		height: 40vh;
+		display: inline-grid;
+		justify-content: center;
+		align-content: center;
+		grid-template-columns: 1fr 1fr 1fr;
+	}
+	cell {
 		background: black;
 		border: 1px solid white;
-		padding: 40px;
+		grid-row-start: 1;
+		height: 5em;
+		width: 5em;
 	}
-	td.firing {
+	cell.firing {
 		background: white;
 		border: 1px solid black;
 	}
-	table {
-		border-collapse: collapse;
-		margin: 10vh auto;
+	controls {
+		height: 10vh;
+		display: flex;
+		justify-content: center;
 	}
-	layer, div {
+	controls > svg {
+		margin: 1em;
+	}
+	circuitry {
+		height: 50vh;
+		overflow: scroll;
+	}
+	layer {
 		display: flex;
 		justify-content: center;
 	}
@@ -25,14 +43,8 @@
 		border-radius: 50%;
 		border-style: solid;
 		margin: 1em;
-		height: 50px;
-		width: 50px;
-	}
-	synapse{
-		position: absolute;
-		background: currentColor;
-		z-index: -10;
-		width: 4px;
+		height: 3em;
+		width: 3em;
 	}
 	neuron[data-threshold="2"] {
 		border-style: dotted solid solid dotted;
@@ -40,6 +52,12 @@
 	}
 	neuron[data-threshold="3"] {
 		border-style: dotted dotted solid dotted;;
+	}
+	synapse{
+		position: absolute;
+		background: currentColor;
+		z-index: -10;
+		width: 0.25em;
 	}
 	.salmon {
 		color: salmon;
@@ -59,45 +77,47 @@
 	.darkmagenta {
 		color: darkmagenta;
 	}
-	.firing, .synapse {
+	.firing {
 		background: currentColor;
-	}
-	.controls {
-		margin: 1em;
 	}
 </style>
 <title>Brain Maker</title>
 <body>
-	<table>
-	</table>
-	<div id="controlBox">
-		<svg id="resetButton" class="controls" height="2em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-		<svg id="nextLevelButton" class="controls" height="2em" viewBox="0 0 24 24"><rect fill="none" height="24" width="24"/><path d="M15,5l-1.41,1.41L18.17,11H2V13h16.17l-4.59,4.59L15,19l7-7L15,5z"/></svg>
-	</div>
+	<visualfield></visualfield>
+	<controls>
+		<svg id="resetButton" height="2em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+		<svg id="nextLevelButton" height="2em" viewBox="0 0 24 24"><rect fill="none" height="24" width="24"/><path d="M15,5l-1.41,1.41L18.17,11H2V13h16.17l-4.59,4.59L15,19l7-7L15,5z"/></svg>
+	</controls>
+	<circuitry></circuitry>
 	<div id="invisibleElement" style="display: none"></div>
 </body>
 <script>
-	const prelevel1 = {name:"prelevel1",visualfield:[[1,2,3]],layers:["retina","middle"],neurons:[[{id:1,threshold:1},{id:2,threshold:1},{id:3,threshold:1}],[{id:4,threshold:3}]],nextLevel:"level1"}
-	const level1 = {name:"level1", visualfield:[[1,2,3,4,5]], layers:["retina","middle"], neurons:[[{id:1,threshold:1},{id:2,threshold:1},{id:3,threshold:1},{id:4,threshold:1},{id:5,threshold:1}],[{id:6,threshold:3},{id:7,threshold:3},{id:8,threshold:3}]], nextLevel:""}
+	const zero = {name:"zero", visualfield:[[]], layers:["retina","middle"], neurons:[[{id:1,threshold:1}],[{id:2,threshold:1}]], nextLevel:"threshold2intro"}
+	const threshold2intro = {name:"threshold2intro", visualfield:[[]], layers:["retina","middle"], neurons:[[{id:1,threshold:1},{id:2,threshold:1}],[{id:3,threshold:2}]], nextLevel:"threshold3intro"}
+	const threshold3intro = {name:"threshold3intro", visualfield:[[]], layers:["retina","middle"], neurons:[[{id:1,threshold:1},{id:2,threshold:1},{id:3,threshold:1}],[{id:4,threshold:3}]], nextLevel:"visualfieldintro"}
+	const visualfieldintro = {name:"visualfieldintro", visualfield:[[1,2,3,4,5]], layers:["retina","first-middle","second-middle"], neurons:[[{id:1,threshold:1},{id:2,threshold:1},{id:3,threshold:1},{id:4,threshold:1},{id:5,threshold:1}],[{id:6,threshold:3},{id:7,threshold:3},{id:8,threshold:3}],[{id:9,threshold:1}]], nextLevel:"level1"}
+	const level1 = {name:"level1", visualfield:[[1,2,3],[4,5,6],[7,8,9]], layers:["retina","middle"], neurons:[[{id:1,threshold:1},{id:2,threshold:1},{id:3,threshold:1},{id:4,threshold:1},{id:5,threshold:1},{id:6,threshold:1},{id:7,threshold:1},{id:8,threshold:1},{id:9,threshold:1}],[{id:10,threshold:3},{id:11,threshold:3},{id:12,threshold:3}]], nextLevel:""}
 
-	var currentLevel = "" //variable to keep track of current level, unused
+	function hideDragImage(e) {
+		var invisible = document.getElementById("invisibleElement")
+		e.dataTransfer.setDragImage(invisible, 0, 0)
+	}
 
 	function populate(layerId, neurons) {
 		let color = ["salmon", "chartreuse", "burlywood", "slateblue", "cornflowerblue", "darkmagenta"][Math.floor(Math.random() * 5)]
 		let layerElement = document.createElement("layer")
+		let circuitryContainer = document.getElementsByTagName("circuitry")[0]
 		layerElement.id = layerId
 		layerElement.classList.add(color)
-		document.body.appendChild(layerElement)
+		circuitryContainer.appendChild(layerElement)
 		for (const neuron of neurons) {
 			let neuronElement = document.createElement("neuron")
 			neuronElement.id = neuron.id
 			neuronElement.dataset.threshold = neuron.threshold
 			neuronElement.classList.add(layerId)
+			if (layerId.includes("middle")) neuronElement.classList.add("middle")
+			else neuronElement.classList.add(layerId)
 			neuronElement.draggable = true
-			// switch (neuron.threshold) {
-			// 	case 2: neuronElement.style.borderStyle = "dotted solid solid dotted"; neuronElement.style.transform = "rotate(45deg)"
-			// 	case 3: neuronElement.style.borderStyle = "dotted dotted solid dotted"
-			// }
 			neuronElement.setAttribute("ondragstart", "event.dataTransfer.setData('presynapticID', event.target.id); hideDragImage(event)")
 			neuronElement.setAttribute("ondragover", "event.preventDefault()")
 			neuronElement.setAttribute("ondrop", "formSynapse(event)")
@@ -105,10 +125,30 @@
 		}
 	} //creates HTML elements representing neurons, used by the generate function
 
-	function hideDragImage(e) {
-		var invisible = document.getElementById("invisibleElement")
-		e.dataTransfer.setDragImage(invisible, 0, 0)
+	function drawField(visualfield) {
+		let grid = document.getElementsByTagName("visualField")[0]
+		for (const layer of visualfield) {
+			if (layer.length > 0) {
+				for (const cell of layer) {
+					let cellElement = document.createElement("cell")
+					cellElement.id = cell + "v"
+					grid.appendChild(cellElement)
+				}
+			}
+		}
 	}
+
+	function generate(level) {
+		localStorage.clear()
+		let layersFromPreviousLevel = document.getElementsByTagName("layer")
+		while (layersFromPreviousLevel.length > 0) layersFromPreviousLevel[0].remove()
+		let visualfieldFromPreviousLevel = document.getElementsByTagName("cell")
+		while (visualfieldFromPreviousLevel.length > 0) visualfieldFromPreviousLevel[0].remove()
+		drawField(level.visualfield)
+		for (i = 0; i < level.layers.length; i++) populate(level.layers[i],level.neurons[i])
+		document.getElementById("resetButton").setAttribute("onclick", "generate(" + level.name + ")")
+		document.getElementById("nextLevelButton").setAttribute("onclick", "generate(" + level.nextLevel + ")")
+	} //parses level data
 
 	function showSynapse(from, to, synapse){
 		var fT = from.offsetTop  + from.offsetHeight/2
@@ -141,29 +181,6 @@
 		synapse.style.height = H + 'px'
 	}
 
-	function generate(level) {
-		localStorage.clear()
-		currentLevel = level.name
-		let elementsFromPreviousLevel = document.getElementsByTagName("layer")
-		while (elementsFromPreviousLevel.length > 0) elementsFromPreviousLevel[0].remove()
-		for (i = 0; i < level.layers.length; i++) {
-			populate(level.layers[i],level.neurons[i])
-		}
-		document.getElementById("resetButton").setAttribute("onclick", "generate(" + level.name + ")")
-		document.getElementById("nextLevelButton").setAttribute("onclick", "generate(" + level.nextLevel + ")")
-	} //parses level data
-
-	function fire(neuron) {
-		let excitation = 0
-		let inputs = JSON.parse(localStorage.getItem(neuron))
-		let threshold = document.getElementById(neuron).dataset.threshold
-		for (const input of inputs) {
-			if (document.getElementById(input).classList.contains("firing")) excitation++
-		}
-		if (excitation >= threshold) document.getElementById(neuron).classList.add("firing")
-		else document.getElementById(neuron).classList.remove("firing")
-	}//spikes neuron if inputs are firing
-
 	function formSynapse(event) {
 		let presynapticID = event.dataTransfer.getData("presynapticID")
 		let postsynapticID = event.target.id
@@ -185,33 +202,34 @@
 		}
 	}//manages synapses in Local Storage and draws them
 
-	var oscillator = 0 //maintains periodic spike
+	function fire(neuron) {
+		let excitation = 0
+		let inputs = JSON.parse(localStorage.getItem(neuron))
+		let threshold = document.getElementById(neuron).dataset.threshold
+		for (const input of inputs) {
+			if (document.getElementById(input).classList.contains("firing")) excitation++
+		}
+		if (excitation >= threshold) document.getElementById(neuron).classList.add("firing")
+		else document.getElementById(neuron).classList.remove("firing")
+	}//spikes neuron if inputs are firing
 
 	function spike() {
-		oscillator -= 1
 		for (const x of Array.from(document.getElementsByClassName('retina'))) x.classList.add('firing')
 		for (const x of Array.from(document.getElementsByClassName('middle'))) {
 			if (localStorage.getItem(x.id) != null) fire(x.id)
 		}
-		if (oscillator <= 0) {
-			clearInterval(spikeInterval)
-			restInterval = setInterval(rest, 100)
-		}
+		setTimeout(rest, 100)
 	} //maintains periodic spike
 
 	function rest() {
-		oscillator += 0.15
 		for (const x of Array.from(document.getElementsByClassName('retina'))) x.classList.remove('firing')
 		for (const x of Array.from(document.getElementsByClassName('middle'))) {
 			if (localStorage.getItem(x.id) != null) fire(x.id)
 		}
-		if (oscillator >= 1) {
-			clearInterval(restInterval)
-			spikeInterval = setInterval(spike, 100)
-		}
+		setTimeout(spike, 1000)
 	} //maintains periodic spike
 
-	generate(prelevel1) //starts from level 0
+	generate(zero) //starts from level 0
 
-	restInterval = setInterval(rest, 100) //starts periodic spike
+	setTimeout(rest, 100) //starts periodic spike
 </script>
