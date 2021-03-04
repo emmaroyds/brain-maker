@@ -8,18 +8,18 @@
 		display: inline-grid;
 		justify-content: center;
 		align-content: center;
-		grid-template-columns: 1fr 1fr 1fr;
+		grid-template-columns: repeat(var(--grid-x), auto);
+		grid-template-rows: repeat(var(--grid-y), auto);
 	}
 	cell {
-		background: black;
-		border: 1px solid white;
-		grid-row-start: 1;
+		background: white;
+		border: 1px solid black;
 		height: 5em;
 		width: 5em;
 	}
 	cell.firing {
-		background: white;
-		border: 1px solid black;
+		background: black;
+		border: 1px solid white;
 	}
 	controls {
 		height: 10vh;
@@ -45,6 +45,7 @@
 		margin: 1em;
 		height: 3em;
 		width: 3em;
+		z-index: 1;
 	}
 	neuron[data-threshold="2"] {
 		border-style: dotted solid solid dotted;
@@ -56,8 +57,15 @@
 	synapse{
 		position: absolute;
 		background: currentColor;
-		z-index: -10;
 		width: 0.25em;
+	}
+	message {
+		font-family: cursive;
+		font-size: 1.2em;
+		position: absolute;
+		right: 3em;
+		bottom: 3em;
+		width: 14em;
 	}
 	.salmon {
 		color: salmon;
@@ -92,11 +100,10 @@
 	<div id="invisibleElement" style="display: none"></div>
 </body>
 <script>
-	const zero = {name:"zero", visualfield:[[]], layers:["retina","middle"], neurons:[[{id:1,threshold:1}],[{id:2,threshold:1}]], nextLevel:"threshold2intro"}
-	const threshold2intro = {name:"threshold2intro", visualfield:[[]], layers:["retina","middle"], neurons:[[{id:1,threshold:1},{id:2,threshold:1}],[{id:3,threshold:2}]], nextLevel:"threshold3intro"}
-	const threshold3intro = {name:"threshold3intro", visualfield:[[]], layers:["retina","middle"], neurons:[[{id:1,threshold:1},{id:2,threshold:1},{id:3,threshold:1}],[{id:4,threshold:3}]], nextLevel:"visualfieldintro"}
-	const visualfieldintro = {name:"visualfieldintro", visualfield:[[1,2,3,4,5]], layers:["retina","first-middle","second-middle"], neurons:[[{id:1,threshold:1},{id:2,threshold:1},{id:3,threshold:1},{id:4,threshold:1},{id:5,threshold:1}],[{id:6,threshold:3},{id:7,threshold:3},{id:8,threshold:3}],[{id:9,threshold:1}]], nextLevel:"level1"}
-	const level1 = {name:"level1", visualfield:[[1,2,3],[4,5,6],[7,8,9]], layers:["retina","middle"], neurons:[[{id:1,threshold:1},{id:2,threshold:1},{id:3,threshold:1},{id:4,threshold:1},{id:5,threshold:1},{id:6,threshold:1},{id:7,threshold:1},{id:8,threshold:1},{id:9,threshold:1}],[{id:10,threshold:3},{id:11,threshold:3},{id:12,threshold:3}]], nextLevel:""}
+	const intro = {name:"intro", visualfield:[[1]], layers:["retina","middle"], neurons:[[{id:1,threshold:1}],[{id:2,threshold:1}]], nextLevel:"thresholdintro", message:"neurons that are firing make the connected neurons also fire"}
+	const thresholdintro = {name:"thresholdintro", visualfield:[[1,2,3]], layers:["retina","middle"], neurons:[[{id:1,threshold:1},{id:2,threshold:1},{id:3,threshold:1}],[{id:4,threshold:3}]], nextLevel:"visualfieldintro", message:"some neurons need many firing connections before they fire"}
+	const visualfieldintro = {name:"visualfieldintro", visualfield:[[1,2,3,4,5]], layers:["retina","first-middle","second-middle"], neurons:[[{id:1,threshold:1},{id:2,threshold:1},{id:3,threshold:1},{id:4,threshold:1},{id:5,threshold:1}],[{id:6,threshold:3},{id:7,threshold:3},{id:8,threshold:3}],[{id:9,threshold:1}]], nextLevel:"level1", message:"neurons in the first layer fire when they see something in the visual field up there"}
+	const level1 = {name:"level1", visualfield:[[1,2,3],[4,5,6],[7,8,9]], layers:["retina","first-middle", "second-middle"], neurons:[[{id:1,threshold:1},{id:2,threshold:1},{id:3,threshold:1},{id:4,threshold:1},{id:5,threshold:1},{id:6,threshold:1},{id:7,threshold:1},{id:8,threshold:1},{id:9,threshold:1}],[{id:10,threshold:3},{id:11,threshold:3},{id:12,threshold:3}],[{id:13,threshold:1}]], nextLevel:"intro", message:""}
 
 	function hideDragImage(e) {
 		var invisible = document.getElementById("invisibleElement")
@@ -126,6 +133,8 @@
 	} //creates HTML elements representing neurons, used by the generate function
 
 	function drawField(visualfield) {
+		document.documentElement.style.setProperty("--grid-x", visualfield[0].length)
+		document.documentElement.style.setProperty("--grid-y", visualfield.length)
 		let grid = document.getElementsByTagName("visualField")[0]
 		for (const layer of visualfield) {
 			if (layer.length > 0) {
@@ -140,12 +149,29 @@
 
 	function generate(level) {
 		localStorage.clear()
+
 		let layersFromPreviousLevel = document.getElementsByTagName("layer")
 		while (layersFromPreviousLevel.length > 0) layersFromPreviousLevel[0].remove()
+
 		let visualfieldFromPreviousLevel = document.getElementsByTagName("cell")
 		while (visualfieldFromPreviousLevel.length > 0) visualfieldFromPreviousLevel[0].remove()
+
+		let messageFromPreviousLevel = document.getElementsByTagName("message")
+		while (messageFromPreviousLevel.length > 0) messageFromPreviousLevel[0].remove()
+
+		if (level.name == "intro" || level.name == "thresholdintro") document.getElementsByTagName("visualfield")[0].style.visibility = "hidden"
+		else document.getElementsByTagName("visualfield")[0].style.visibility = "visible"
+
 		drawField(level.visualfield)
+
 		for (i = 0; i < level.layers.length; i++) populate(level.layers[i],level.neurons[i])
+
+		for (const x of level.visualfield.flat()) localStorage.setItem(x, JSON.stringify([x.toString() + "v"]))
+
+		let messageElement = document.createElement("message")
+		messageElement.innerHTML = level.message
+		document.body.appendChild(messageElement)
+
 		document.getElementById("resetButton").setAttribute("onclick", "generate(" + level.name + ")")
 		document.getElementById("nextLevelButton").setAttribute("onclick", "generate(" + level.nextLevel + ")")
 	} //parses level data
@@ -171,11 +197,7 @@
 
 		top -= H/2
 
-		synapse.style["-webkit-transform"] = 'rotate(' + ANG + 'deg)'
-		synapse.style["-moz-transform"] = 'rotate(' + ANG + 'deg)'
-		synapse.style["-ms-transform"] = 'rotate(' + ANG + 'deg)'
-		synapse.style["-o-transform"] = 'rotate(' + ANG + 'deg)'
-		synapse.style["-transform"] = 'rotate(' + ANG + 'deg)'
+		synapse.style["transform"] = 'rotate(' + ANG + 'deg)'
 		synapse.style.top    = top + 'px'
 		synapse.style.left   = left + 'px'
 		synapse.style.height = H + 'px'
@@ -184,15 +206,18 @@
 	function formSynapse(event) {
 		let presynapticID = event.dataTransfer.getData("presynapticID")
 		let postsynapticID = event.target.id
-		if (presynapticID != postsynapticID && document.getElementById(presynapticID).tagName == "NEURON" ) {
+		if (presynapticID != postsynapticID && document.getElementById(presynapticID).tagName == "NEURON" && document.getElementById(postsynapticID).tagName == "NEURON") {
 			if (localStorage.getItem(postsynapticID) != null) {
 				let inputs = JSON.parse(localStorage.getItem(postsynapticID))
 				if (inputs.indexOf(presynapticID) == -1) inputs.push(presynapticID)
 				localStorage.setItem(postsynapticID, JSON.stringify(inputs))
 			}
-			else localStorage.setItem(postsynapticID, JSON.stringify([presynapticID]))
+			else {
+				localStorage.setItem(postsynapticID, JSON.stringify([presynapticID]))
+			}
 			let synapseElement = document.createElement("synapse")
 			synapseElement.id = presynapticID + ">" + postsynapticID
+			synapseElement.setAttribute("onclick", "removeSynapse('" + synapseElement.id + "')")
 			document.getElementById(presynapticID).parentNode.appendChild(synapseElement)
 			showSynapse(
 				document.getElementById(presynapticID),
@@ -201,6 +226,15 @@
 				)
 		}
 	}//manages synapses in Local Storage and draws them
+
+	function removeSynapse(synapseID) {
+		document.getElementById(synapseID).remove()
+		let presynapticID = synapseID.split('>')[0]
+		let postsynapticID = synapseID.split('>')[1]
+		let inputs = JSON.parse(localStorage.getItem(postsynapticID))
+		inputs.splice(inputs.indexOf(presynapticID), 1)
+		localStorage.setItem(postsynapticID, JSON.stringify(inputs))
+	}
 
 	function fire(neuron) {
 		let excitation = 0
@@ -214,22 +248,18 @@
 	}//spikes neuron if inputs are firing
 
 	function spike() {
-		for (const x of Array.from(document.getElementsByClassName('retina'))) x.classList.add('firing')
-		for (const x of Array.from(document.getElementsByClassName('middle'))) {
-			if (localStorage.getItem(x.id) != null) fire(x.id)
-		}
+		for (const x of Array.from(document.getElementsByTagName('cell'))) x.classList.add('firing')
+		for (const x of Array.from(document.getElementsByTagName('neuron'))) if (localStorage.getItem(x.id) != null) fire(x.id)
 		setTimeout(rest, 100)
 	} //maintains periodic spike
 
 	function rest() {
-		for (const x of Array.from(document.getElementsByClassName('retina'))) x.classList.remove('firing')
-		for (const x of Array.from(document.getElementsByClassName('middle'))) {
-			if (localStorage.getItem(x.id) != null) fire(x.id)
-		}
-		setTimeout(spike, 1000)
+		for (const x of Array.from(document.getElementsByTagName('cell'))) x.classList.remove('firing')
+		for (const x of Array.from(document.getElementsByTagName('neuron'))) if (localStorage.getItem(x.id) != null) fire(x.id)
+		setTimeout(spike, 2000)
 	} //maintains periodic spike
 
-	generate(zero) //starts from level 0
+	generate(intro) //starts from level 0
 
 	setTimeout(rest, 100) //starts periodic spike
 </script>
